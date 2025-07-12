@@ -34,12 +34,12 @@ on:
 jobs:
   setup:
     name: Setup Development Environment
-    runs-on: ${{ inputs.platform == 'windows' && 'windows-latest' || (inputs.platform == 'macos' && 'macos-latest' || (matrix.os == 'windows-latest' && 'windows-latest' || 'macos-latest')) }}
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: ${{ inputs.platform == 'auto' && fromJSON('["macos-latest", "windows-latest"]') || fromJSON(format('["{0}"]', inputs.platform == 'windows' && 'windows-latest' || 'macos-latest')) }}
+        os: ${{ inputs.platform == 'auto' && fromJSON('["macos-latest", "windows-latest"]') || (inputs.platform == 'windows' && fromJSON('["windows-latest"]') || fromJSON('["macos-latest"]')) }}
     outputs:
-      depot-tools-path: ${{ steps.setup-depot-tools.outputs.path }}
+      depot-tools-path: ${{ steps.setup-depot-tools.outputs.path || steps.update-depot-tools.outputs.path }}
       chromium-src-path: ${{ steps.setup-paths.outputs.chromium-src }}
 
     steps:
@@ -116,17 +116,23 @@ jobs:
           echo "path=${{ github.workspace }}/depot_tools" >> $GITHUB_OUTPUT
 
       - name: Update depot_tools
+        id: update-depot-tools
         if: steps.cache-depot-tools.outputs.cache-hit == 'true'
         shell: bash
         run: |
           cd depot_tools
-          git pull origin main
+          git pull origin main || echo "Warning: Could not update depot_tools"
           echo "path=${{ github.workspace }}/depot_tools" >> $GITHUB_OUTPUT
 
       - name: Add depot_tools to PATH
         shell: bash
         run: |
-          echo "${{ github.workspace }}/depot_tools" >> $GITHUB_PATH
+          # Ensure we have the depot_tools path from either setup or update step
+          DEPOT_TOOLS_PATH="${{ steps.setup-depot-tools.outputs.path || steps.update-depot-tools.outputs.path }}"
+          if [[ -z "$DEPOT_TOOLS_PATH" ]]; then
+            DEPOT_TOOLS_PATH="${{ github.workspace }}/depot_tools"
+          fi
+          echo "$DEPOT_TOOLS_PATH" >> $GITHUB_PATH
           if [[ "${{ runner.os }}" == "Windows" ]]; then
             echo "DEPOT_TOOLS_WIN_TOOLCHAIN=0" >> $GITHUB_ENV
           fi
@@ -142,7 +148,12 @@ jobs:
         id: chromium-version
         shell: bash
         run: |
-          CHROMIUM_VERSION=$(cat browseros/CHROMIUM_VERSION)
+          # Parse the multi-line CHROMIUM_VERSION file
+          MAJOR=$(grep "^MAJOR=" browseros/CHROMIUM_VERSION | cut -d= -f2)
+          MINOR=$(grep "^MINOR=" browseros/CHROMIUM_VERSION | cut -d= -f2)
+          BUILD=$(grep "^BUILD=" browseros/CHROMIUM_VERSION | cut -d= -f2)
+          PATCH=$(grep "^PATCH=" browseros/CHROMIUM_VERSION | cut -d= -f2)
+          CHROMIUM_VERSION="${MAJOR}.${MINOR}.${BUILD}.${PATCH}"
           echo "version=$CHROMIUM_VERSION" >> $GITHUB_OUTPUT
           echo "Chromium version: $CHROMIUM_VERSION"
 
@@ -183,13 +194,14 @@ jobs:
       - name: Update Chromium
         if: inputs.checkout-chromium && steps.cache-chromium.outputs.cache-hit == 'true'
         shell: bash
-        working-directory: chromium
         run: |
+          cd chromium
           # Update to correct version
-          git fetch origin ${{ steps.chromium-version.outputs.version }}
-          git checkout ${{ steps.chromium-version.outputs.version }}
+          git fetch origin refs/tags/${{ steps.chromium-version.outputs.version }}
+          git checkout tags/${{ steps.chromium-version.outputs.version }}
           
           # Sync dependencies
+          cd ..
           gclient sync --nohooks
 
       - name: Verify setup
@@ -222,7 +234,7 @@ jobs:
       - name: Create environment summary
         shell: bash
         run: |
-          cat > ${{ github.workspace }}/build-env.txt <<EOF
+          cat > "${{ github.workspace }}/build-env.txt" <<'EOF'
           BrowserOS Development Environment
           =================================
           Platform: ${{ runner.os }}
