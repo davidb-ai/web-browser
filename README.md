@@ -22,7 +22,7 @@
 
 </div>
 
-🌐 BrowserOS is an open-source agentic browser that runs AI agents locally. **Your privacy-first alternative to Perplexity Comet**.
+🌐 zalk-os is an open-source agentic browser that runs AI agents locally. **Your privacy-first alternative to Perplexity Comet**.
 
 🔒 Privacy first - use your own API keys or run local models with Ollama. Your data stays on your computer.
 
@@ -30,14 +30,14 @@
 
 ## Quick start
 
-1. Download and install BrowserOS:
+1. Download and install zalk-os:
    - [macOS](https://bit.ly/nxtscape)
-   - [Windows](https://cdn.browseros.com/win/BrowserOS-installer.zip)
+   - [Windows](https://cdn.browseros.com/win/zalk-os-installer.zip)
 2. Import your Chrome data (optional)
 3. Connect your AI provider (OpenAI, Anthropic, or local Ollama)
 4. Start automating!
 
-## What makes BrowserOS special
+## What makes zalk-os special
 
 <div align="center">
 <img src="https://cdn.browseros.com/resources/usecase.png" alt="example-use-cases" width="85%">
@@ -125,10 +125,10 @@ They're a search/ad company. Your browser history becomes their product. We keep
 
 ### Build Instructions
 
-#### Step 1: Clone BrowserOS and Checkout Chromium
+#### Step 1: Clone zalk-os and Checkout Chromium
 
 ```bash
-# Clone BrowserOS repository
+# Clone zalk-os repository
 git clone https://github.com/browseros/browseros.git
 cd browseros
 
@@ -141,7 +141,7 @@ cd build
 # Make sure to checkout the exact version from CHROMIUM_VERSION file
 ```
 
-#### Step 2: Build BrowserOS
+#### Step 2: Build zalk-os
 
 **macOS Debug Build:**
 ```bash
@@ -164,7 +164,7 @@ python build/build.py --config build/config/release.yaml --chromium-src build
 ```
 
 The build system will automatically:
-1. Apply BrowserOS patches to Chromium
+1. Apply zalk-os patches to Chromium
 2. Configure GN build flags
 3. Compile the browser
 4. Sign the app (macOS only)
@@ -172,7 +172,7 @@ The build system will automatically:
 
 **Note:** First build takes ~3 hours on M4 Max. Subsequent builds are faster.
 
-#### Step 3: Run BrowserOS
+#### Step 3: Run zalk-os
 
 **macOS:**
 ```bash
@@ -212,7 +212,7 @@ For detailed build documentation, see [docs/BUILD.md](docs/BUILD.md).
 
 ## Contributing
 
-We'd love your help making BrowserOS better!
+We'd love your help making zalk-os better!
 
 - 🐛 [Report bugs](https://github.com/nxtscape/nxtscape/issues)
 - 💡 [Suggest features](https://dub.sh/nxtscape-feature-request)
@@ -221,7 +221,7 @@ We'd love your help making BrowserOS better!
 
 ## License
 
-BrowserOS is open source under the [AGPL-3.0 license](LICENSE).
+zalk-os is open source under the [AGPL-3.0 license](LICENSE).
 
 ---
 

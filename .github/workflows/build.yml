@@ -1,4 +1,4 @@
-name: Build BrowserOS
+name: Build ZalkOS
 
 on:
   push:

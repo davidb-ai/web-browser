@@ -36,7 +36,7 @@ class BuildContext:
     # App names - will be set based on platform
     CHROMIUM_APP_NAME: str = ""
     NXTSCAPE_APP_NAME: str = ""
-    NXTSCAPE_APP_BASE_NAME: str = "BrowserOS"  # Base name without extension
+    NXTSCAPE_APP_BASE_NAME: str = "zalk-os"  # Base name without extension
 
     # Third party
     SPARKLE_VERSION: str = "2.7.0"
@@ -223,7 +223,7 @@ class BuildContext:
     # Bundle identifiers
     def get_bundle_identifier(self) -> str:
         """Get main bundle identifier"""
-        return "com.browseros.BrowserOS"
+        return "com.browseros.zalk-os"
 
     def get_base_identifier(self) -> str:
         """Get base identifier for components"""

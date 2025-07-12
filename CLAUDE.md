@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-BrowserOS (formerly Nxtscape) is an open-source agentic browser with AI superpowers, built on Chromium. It focuses on privacy-first AI features that run locally using your own API keys or local models.
+zalk-os (formerly Nxtscape) is an open-source agentic browser with AI superpowers, built on Chromium. It focuses on privacy-first AI features that run locally using your own API keys or local models.
 
 ## Build Commands
 
@@ -26,7 +26,7 @@ python build/build.py --config build/config/release.yaml --chromium-src build
 # Individual build steps
 python build/build.py --clean         # Clean build artifacts
 python build/build.py --git-setup     # Setup git config
-python build/build.py --apply-patches # Apply BrowserOS patches
+python build/build.py --apply-patches # Apply zalk-os patches
 python build/build.py --build         # Compile Chromium
 python build/build.py --sign          # Sign the app (macOS)
 python build/build.py --package       # Create installer
@@ -45,7 +45,7 @@ The project uses a custom Python-based build system located in `build/`:
 - Platform-specific handling for macOS and Windows
 
 ### Patch-Based Customization
-BrowserOS customizes Chromium through patches in `patches/nxtscape/`:
+zalk-os customizes Chromium through patches in `patches/nxtscape/`:
 - **patches/series**: Lists patch order (28 patches total)
 - Patches modify Chromium for AI integration, branding, and features
 - Use `git apply` through the build system
@@ -59,7 +59,7 @@ AI features are implemented as Chrome extensions in `resources/files/`:
 
 ### Version Management
 - Chromium version tracked in `CHROMIUM_VERSION`
-- BrowserOS build number: 32
+- zalk-os build number: 32
 - Combined version: chromium_version + build_number
 
 ## Key Development Patterns

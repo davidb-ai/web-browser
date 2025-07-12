@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Application signing and notarization module for BrowserOS
+Application signing and notarization module for zalk-os
 NOTE: This module is macOS-specific. Windows signing would require signtool.exe
 """
 
@@ -117,14 +117,14 @@ def find_components_to_sign(
 
     framework_path = app_path / "Contents" / "Frameworks"
 
-    # Check both versioned and non-versioned paths for BrowserOS Framework
-    nxtscape_framework_paths = [framework_path / "BrowserOS Framework.framework"]
+    # Check both versioned and non-versioned paths for zalk-os Framework
+    nxtscape_framework_paths = [framework_path / "zalk-os Framework.framework"]
 
     # Add versioned path if context is available
     if ctx and ctx.nxtscape_chromium_version:
         versioned_path = (
             framework_path
-            / "BrowserOS Framework.framework"
+            / "zalk-os Framework.framework"
             / "Versions"
             / ctx.nxtscape_chromium_version
         )
@@ -163,7 +163,7 @@ def find_components_to_sign(
                 if autoupdate.exists() and autoupdate.is_file():
                     components["executables"].append(autoupdate)
 
-    # Find all dylibs (check versioned path for BrowserOS Framework libraries)
+    # Find all dylibs (check versioned path for zalk-os Framework libraries)
     for nxtscape_fw_path in nxtscape_framework_paths:
         libraries_dir = nxtscape_fw_path / "Libraries"
         if libraries_dir.exists():
@@ -216,7 +216,7 @@ def get_identifier_for_component(
 
     # For frameworks
     if component_path.suffix == ".framework":
-        if name == "BrowserOS Framework":
+        if name == "zalk-os Framework":
             return f"{base_identifier}.framework"
         else:
             return f"{base_identifier}.{name.replace(' ', '_').lower()}"
@@ -365,10 +365,10 @@ def sign_all_components(
             ):
                 return False
 
-    # 6. Sign frameworks (except the main BrowserOS Framework)
+    # 6. Sign frameworks (except the main zalk-os Framework)
     if components["frameworks"]:
         log_info("\n🔏 Signing frameworks...")
-        # Sort to sign Sparkle.framework before BrowserOS Framework.framework
+        # Sort to sign Sparkle.framework before zalk-os Framework.framework
         frameworks_sorted = sorted(
             components["frameworks"], key=lambda x: 0 if "Sparkle" in x.name else 1
         )
@@ -379,14 +379,14 @@ def sign_all_components(
 
     # 7. Sign main executable
     log_info("\n🔏 Signing main executable...")
-    main_exe = app_path / "Contents" / "MacOS" / "BrowserOS"
-    if not sign_component(main_exe, certificate_name, "com.browseros.BrowserOS"):
+    main_exe = app_path / "Contents" / "MacOS" / "zalk-os"
+    if not sign_component(main_exe, certificate_name, "com.browseros.zalk-os"):
         return False
 
     # 8. Finally sign the app bundle
     log_info("\n🔏 Signing application bundle...")
     requirements = (
-        '=designated => identifier "com.browseros.BrowserOS" and '
+        '=designated => identifier "com.browseros.zalk-os" and '
         "anchor apple generic and certificate 1[field.1.2.840.113635.100.6.2.6] /* exists */ and "
         "certificate leaf[field.1.2.840.113635.100.6.1.13] /* exists */"
     )
@@ -425,7 +425,7 @@ def sign_all_components(
         "--force",
         "--timestamp",
         "--identifier",
-        "com.browseros.BrowserOS",
+        "com.browseros.zalk-os",
         "--options",
         "restrict,library,runtime,kill",
         "--requirements",
@@ -574,7 +574,7 @@ def notarize_app(
 def sign_app(ctx: BuildContext, create_dmg: bool = True) -> bool:
     """Main signing function that uses BuildContext from build.py"""
     log_info("=" * 70)
-    log_info("🚀 Starting signing process for BrowserOS...")
+    log_info("🚀 Starting signing process for zalk-os...")
     log_info("=" * 70)
 
     # Error tracking similar to bash script
@@ -642,7 +642,7 @@ def sign_app(ctx: BuildContext, create_dmg: bool = True) -> bool:
                 app_path=app_path,
                 dmg_path=dmg_path,
                 certificate_name=env_vars["certificate_name"],
-                volume_name="BrowserOS",
+                volume_name="zalk-os",
                 pkg_dmg_path=pkg_dmg_path,
                 keychain_profile="notarytool-profile",
             ):
