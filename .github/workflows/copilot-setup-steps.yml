@@ -67,21 +67,6 @@ jobs:
         with:
           xcode-version: latest-stable
 
-      - name: Setup Node.js (macOS)
-        if: runner.os == 'macOS'
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install macOS dependencies
-        if: runner.os == 'macOS'
-        run: |
-          # Install pkg-dmg for creating DMG packages
-          if ! command -v pkg-dmg &> /dev/null; then
-            echo "Installing pkg-dmg..."
-            npm install -g pkg-dmg
-          fi
-
       - name: Setup Visual Studio (Windows)
         if: runner.os == 'Windows'
         uses: microsoft/setup-msbuild@v2
