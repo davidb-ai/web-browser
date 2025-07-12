@@ -17,7 +17,7 @@ def merge_architectures(
     arch1_path: Path,
     arch2_path: Path,
     output_path: Path,
-    universalizer_script: Path = None
+    universalizer_script: Optional[Path] = None
 ) -> bool:
     """
     Merge two architecture builds into a universal binary
@@ -135,7 +135,7 @@ def merge_sign_package(
     root_dir: Path,
     sign: bool = True,
     package: bool = True,
-    universalizer_script: Path = None
+    universalizer_script: Optional[Path] = None
 ) -> bool:
     """
     Complete workflow: merge, sign, and package universal binary

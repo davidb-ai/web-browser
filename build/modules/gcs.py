@@ -138,7 +138,8 @@ def upload_signed_artifacts(ctx: BuildContext) -> bool:
     """Upload signed artifacts to GCS"""
     # For now, this is the same as package artifacts
     # Can be extended in the future for specific signed artifacts
-    return upload_package_artifacts(ctx)
+    success, _ = upload_package_artifacts(ctx)
+    return success
 
 
 def download_from_gcs(bucket_name: str, source_path: str, dest_path: Path, ctx: Optional[BuildContext] = None) -> bool:

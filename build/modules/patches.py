@@ -100,7 +100,7 @@ def parse_series_file(patches_dir: Path) -> Iterator[Path]:
             line = line.split(' #')[0].strip()
         patches.append(patches_dir / line)
     
-    return patches
+    return iter(patches)
 
 
 def apply_single_patch(patch_path: Path, tree_path: Path, current_num: int, total: int) -> bool:

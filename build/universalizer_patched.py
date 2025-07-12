@@ -70,7 +70,7 @@ def _file_type_for_stat(st):
     if stat.S_ISDIR(st.st_mode):
         return "directory"
 
-    raise Exception("unknown file type for mode 0o%o" % mode)
+    raise Exception("unknown file type for mode 0o%o" % st.st_mode)
 
 
 def _sole_list_element(l, exception_message):
@@ -99,7 +99,7 @@ def _read_plist(path):
             return plistlib.load(file)
         except AttributeError:
             # Old API, available (but deprecated) until Python 3.9.
-            return plistlib.readPlist(file)
+            return plistlib.readPlist(file)  # type: ignore
 
 
 def _write_plist(value, path):
@@ -110,7 +110,7 @@ def _write_plist(value, path):
             plistlib.dump(value, file)
         except AttributeError:
             # Old API, available (but deprecated) until Python 3.9.
-            plistlib.writePlist(value, file)
+            plistlib.writePlist(value, file)  # type: ignore
 
 
 class CantMergeException(Exception):
@@ -350,17 +350,20 @@ def _universalize(input_paths, output_path, root):
         )
         os.symlink(target, output_path)
 
-    input_permissions = [stat.S_IMODE(x.st_mode) for x in input_stats]
+    input_permissions = [stat.S_IMODE(x.st_mode) for x in input_stats if x]
     permission = _sole_list_element(
         input_permissions,
         "varying permissions %r for input paths %r"
         % (["0o%o" % x for x in input_permissions], input_paths),
     )
 
-    os.lchmod(output_path, permission)
+    if hasattr(os, 'lchmod'):
+        os.lchmod(output_path, permission)
+    else:
+        os.chmod(output_path, permission)
 
     if type != "file" or identical:
-        input_mtimes = [x.st_mtime for x in input_stats]
+        input_mtimes = [x.st_mtime for x in input_stats if x]
         if len(set(input_mtimes)) == 1:
             times = (time.time(), input_mtimes[0])
             try:

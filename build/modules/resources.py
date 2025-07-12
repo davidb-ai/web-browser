@@ -87,4 +87,5 @@ def copy_resources(ctx: BuildContext) -> bool:
             log_error(f"    Error: {e}")
 
     log_success("Resources copied")
+    return True
 

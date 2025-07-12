@@ -66,7 +66,7 @@ def add_sparkle_keys_to_info_plist(ctx: BuildContext):
                 elif value_elem.tag == "false":
                     value = False
                 elif value_elem.tag == "integer":
-                    value = int(value_elem.text)
+                    value = int(value_elem.text) if value_elem.text else 0
                 else:
                     value = value_elem.text
 

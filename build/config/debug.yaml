@@ -1,4 +1,9 @@
 # Nxtscape Debug Build Configuration
+# Legacy fields for CI compatibility
+build_type: debug
+gn_flags: build/config/gn/flags.macos.debug.gn
+
+# Actual configuration
 build:
   type: debug
   architecture: arm64 # Single arch for faster debug builds

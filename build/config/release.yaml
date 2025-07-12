@@ -1,4 +1,9 @@
 # Nxtscape Release Build Configuration
+# Legacy fields for CI compatibility
+build_type: release
+gn_flags: build/config/gn/flags.macos.release.gn
+
+# Actual configuration
 build:
   type: release
   # architecture: arm64  # Default single architecture

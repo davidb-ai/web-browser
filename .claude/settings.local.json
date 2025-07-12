@@ -12,7 +12,9 @@
       "Bash(git commit:*)",
       "Bash(git push:*)",
       "Bash(gh api:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(pyright:*)",
+      "Bash(npm install:*)"
     ],
     "deny": []
   }

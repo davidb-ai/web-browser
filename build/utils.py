@@ -113,7 +113,7 @@ def run_command(
         stdout_lines = []
         
         # Stream output line by line
-        for line in iter(process.stdout.readline, ''):
+        for line in iter(lambda: process.stdout.readline() if process.stdout else '', ''):
             line = line.rstrip()
             if line:
                 print(line)  # Print to console in real-time
@@ -157,7 +157,13 @@ def run_command(
             if e.stderr:
                 log_error(f"Error: {e.stderr}")
             raise
-        return e
+        # Return a CompletedProcess object for failed commands when check=False
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=e.returncode,
+            stdout=e.stdout,
+            stderr=e.stderr
+        )
     except Exception as e:
         _log_to_file(f"RUN_COMMAND: ❌ Unexpected error: {str(e)}")
         if check:
