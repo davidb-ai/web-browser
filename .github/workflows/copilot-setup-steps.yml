@@ -37,7 +37,11 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: ${{ inputs.platform == 'auto' && fromJSON('["macos-latest", "windows-latest"]') || (inputs.platform == 'windows' && fromJSON('["windows-latest"]') || fromJSON('["macos-latest"]')) }}
+        os: ${{ 
+          inputs.platform == 'auto' && fromJSON('["macos-latest", "windows-latest"]') || 
+          (inputs.platform == 'windows' && fromJSON('["windows-latest"]') || 
+          fromJSON('["macos-latest"]')) 
+        }}
     outputs:
       depot-tools-path: ${{ steps.setup-depot-tools.outputs.path || steps.update-depot-tools.outputs.path }}
       chromium-src-path: ${{ steps.setup-paths.outputs.chromium-src }}
@@ -234,33 +238,43 @@ jobs:
       - name: Create environment summary
         shell: bash
         run: |
-          cat > "${{ github.workspace }}/build-env.txt" <<'EOF'
-          BrowserOS Development Environment
-          =================================
-          Platform: ${{ runner.os }}
-          Python: ${{ inputs.python-version }}
-          depot_tools: ${{ github.workspace }}/depot_tools
-          BrowserOS: ${{ github.workspace }}/browseros
-          Chromium: ${{ inputs.checkout-chromium && format('{0}/chromium', github.workspace) || 'Not checked out' }}
-          Chromium Version: ${{ steps.chromium-version.outputs.version }}
+          # Use forward slashes for cross-platform compatibility
+          WORKSPACE="${{ github.workspace }}"
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            WORKSPACE=$(echo "$WORKSPACE" | sed 's/\\/\//g')
+          fi
           
-          Build Commands:
-          ---------------
-          Debug build:
-            cd ${{ github.workspace }}/browseros
-            python build/build.py --config build/config/debug.yaml --chromium-src ${{ github.workspace }}/chromium
+          # Create the output file path
+          OUTPUT_FILE="${WORKSPACE}/build-env.txt"
           
-          Release build:
-            cd ${{ github.workspace }}/browseros
-            python build/build.py --config build/config/release.yaml --chromium-src ${{ github.workspace }}/chromium
-          EOF
+          # Create the environment summary file
+          {
+            echo "BrowserOS Development Environment"
+            echo "================================="
+            echo "Platform: ${{ runner.os }}"
+            echo "Python: ${{ inputs.python-version }}"
+            echo "depot_tools: ${WORKSPACE}/depot_tools"
+            echo "BrowserOS: ${WORKSPACE}/browseros"
+            echo "Chromium: ${{ inputs.checkout-chromium && format('{0}/chromium', github.workspace) || 'Not checked out' }}"
+            echo "Chromium Version: ${{ steps.chromium-version.outputs.version }}"
+            echo ""
+            echo "Build Commands:"
+            echo "---------------"
+            echo "Debug build:"
+            echo "  cd ${WORKSPACE}/browseros"
+            echo "  python build/build.py --config build/config/debug.yaml --chromium-src ${WORKSPACE}/chromium"
+            echo ""
+            echo "Release build:"
+            echo "  cd ${WORKSPACE}/browseros"
+            echo "  python build/build.py --config build/config/release.yaml --chromium-src ${WORKSPACE}/chromium"
+          } > "${OUTPUT_FILE}"
           
           echo "=== Build Environment Summary ==="
-          cat ${{ github.workspace }}/build-env.txt
+          cat "${OUTPUT_FILE}"
 
       - name: Upload environment summary
         uses: actions/upload-artifact@v4
         with:
           name: build-environment-${{ runner.os }}
-          path: build-env.txt
+          path: ${{ github.workspace }}/build-env.txt
           retention-days: 7
