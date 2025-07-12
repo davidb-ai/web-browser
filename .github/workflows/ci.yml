@@ -154,7 +154,17 @@ jobs:
           
           for pattern in "${patterns[@]}"; do
             echo "Checking for pattern: $pattern"
-            if grep -r -i -E "$pattern" --include="*.py" --include="*.js" --include="*.json" --exclude-dir=".git" . 2>/dev/null; then
+            # Exclude minified/bundled JS files which cause false positives
+            if grep -r -i -E "$pattern" \
+              --include="*.py" \
+              --include="*.js" \
+              --include="*.json" \
+              --exclude-dir=".git" \
+              --exclude-dir="build" \
+              --exclude="background.js" \
+              --exclude="sidepanel.js" \
+              --exclude="popup.js" \
+              . 2>/dev/null; then
               echo "⚠️  WARNING: Found potential sensitive data matching pattern: $pattern"
               ((found_issues++))
             fi

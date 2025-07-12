@@ -8,7 +8,7 @@ import os
 import sys
 import shutil
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 from context import BuildContext
 from utils import run_command, log_info, log_error, log_success, log_warning
 

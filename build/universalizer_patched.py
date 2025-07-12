@@ -358,7 +358,7 @@ def _universalize(input_paths, output_path, root):
     )
 
     if hasattr(os, 'lchmod'):
-        os.lchmod(output_path, permission)
+        os.lchmod(output_path, permission)  # type: ignore
     else:
         os.chmod(output_path, permission)
 

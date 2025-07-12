@@ -14,7 +14,8 @@
       "Bash(gh api:*)",
       "Bash(grep:*)",
       "Bash(pyright:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(find:*)"
     ],
     "deny": []
   }
