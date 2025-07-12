@@ -1,0 +1,263 @@
+name: Setup Development Environment
+
+on:
+  workflow_call:
+    inputs:
+      platform:
+        description: 'Target platform (macos or windows)'
+        required: false
+        type: string
+        default: 'auto'
+      python-version:
+        description: 'Python version to use'
+        required: false
+        type: string
+        default: '3.12'
+      checkout-chromium:
+        description: 'Whether to checkout Chromium source'
+        required: false
+        type: boolean
+        default: false
+      chromium-cache-key:
+        description: 'Cache key prefix for Chromium source'
+        required: false
+        type: string
+        default: 'chromium'
+    outputs:
+      depot-tools-path:
+        description: 'Path to depot_tools'
+        value: ${{ jobs.setup.outputs.depot-tools-path }}
+      chromium-src-path:
+        description: 'Path to Chromium source'
+        value: ${{ jobs.setup.outputs.chromium-src-path }}
+
+jobs:
+  setup:
+    name: Setup Development Environment
+    runs-on: ${{ inputs.platform == 'windows' && 'windows-latest' || (inputs.platform == 'macos' && 'macos-latest' || (matrix.os == 'windows-latest' && 'windows-latest' || 'macos-latest')) }}
+    strategy:
+      matrix:
+        os: ${{ inputs.platform == 'auto' && fromJSON('["macos-latest", "windows-latest"]') || fromJSON(format('["{0}"]', inputs.platform == 'windows' && 'windows-latest' || 'macos-latest')) }}
+    outputs:
+      depot-tools-path: ${{ steps.setup-depot-tools.outputs.path }}
+      chromium-src-path: ${{ steps.setup-paths.outputs.chromium-src }}
+
+    steps:
+      - name: Checkout BrowserOS
+        uses: actions/checkout@v4
+        with:
+          path: browseros
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python-version }}
+          cache: 'pip'
+          cache-dependency-path: browseros/requirements.txt
+
+      - name: Install Python dependencies
+        run: |
+          cd browseros
+          pip install -r requirements.txt
+          pip install pyright  # For type checking
+
+      - name: Setup Xcode (macOS)
+        if: runner.os == 'macOS'
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Install macOS dependencies
+        if: runner.os == 'macOS'
+        run: |
+          # Install pkg-dmg for creating DMG packages
+          if ! command -v pkg-dmg &> /dev/null; then
+            echo "Installing pkg-dmg..."
+            npm install -g pkg-dmg
+          fi
+
+      - name: Setup Visual Studio (Windows)
+        if: runner.os == 'Windows'
+        uses: microsoft/setup-msbuild@v2
+        with:
+          vs-version: '[17.0,18.0)'  # VS 2022
+
+      - name: Setup sccache (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          # Download and install sccache
+          $SCCACHE_VERSION = "0.7.4"
+          $SCCACHE_URL = "https://github.com/mozilla/sccache/releases/download/v${SCCACHE_VERSION}/sccache-v${SCCACHE_VERSION}-x86_64-pc-windows-msvc.zip"
+          
+          Write-Host "Downloading sccache..."
+          Invoke-WebRequest -Uri $SCCACHE_URL -OutFile sccache.zip
+          
+          Write-Host "Extracting sccache..."
+          Expand-Archive -Path sccache.zip -DestinationPath sccache
+          
+          # Add to PATH
+          $sccachePath = Join-Path $PWD "sccache\sccache-v${SCCACHE_VERSION}-x86_64-pc-windows-msvc"
+          echo "$sccachePath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          
+          # Configure sccache
+          echo "SCCACHE_DIR=$env:LOCALAPPDATA\sccache" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "SCCACHE_CACHE_SIZE=10G" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Cache depot_tools
+        id: cache-depot-tools
+        uses: actions/cache@v4
+        with:
+          path: depot_tools
+          key: ${{ runner.os }}-depot-tools-${{ hashFiles('.github/workflows/copilot-setup-steps.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-depot-tools-
+
+      - name: Setup depot_tools
+        id: setup-depot-tools
+        if: steps.cache-depot-tools.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          echo "Cloning depot_tools..."
+          git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
+          
+          # Set output for other jobs
+          echo "path=${{ github.workspace }}/depot_tools" >> $GITHUB_OUTPUT
+
+      - name: Update depot_tools
+        if: steps.cache-depot-tools.outputs.cache-hit == 'true'
+        shell: bash
+        run: |
+          cd depot_tools
+          git pull origin main
+          echo "path=${{ github.workspace }}/depot_tools" >> $GITHUB_OUTPUT
+
+      - name: Add depot_tools to PATH
+        shell: bash
+        run: |
+          echo "${{ github.workspace }}/depot_tools" >> $GITHUB_PATH
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            echo "DEPOT_TOOLS_WIN_TOOLCHAIN=0" >> $GITHUB_ENV
+          fi
+
+      - name: Setup build paths
+        id: setup-paths
+        shell: bash
+        run: |
+          echo "chromium-src=${{ github.workspace }}/chromium" >> $GITHUB_OUTPUT
+          echo "browseros-src=${{ github.workspace }}/browseros" >> $GITHUB_OUTPUT
+
+      - name: Read Chromium version
+        id: chromium-version
+        shell: bash
+        run: |
+          CHROMIUM_VERSION=$(cat browseros/CHROMIUM_VERSION)
+          echo "version=$CHROMIUM_VERSION" >> $GITHUB_OUTPUT
+          echo "Chromium version: $CHROMIUM_VERSION"
+
+      - name: Cache Chromium source
+        if: inputs.checkout-chromium
+        id: cache-chromium
+        uses: actions/cache@v4
+        with:
+          path: chromium
+          key: ${{ inputs.chromium-cache-key }}-${{ runner.os }}-${{ steps.chromium-version.outputs.version }}
+          restore-keys: |
+            ${{ inputs.chromium-cache-key }}-${{ runner.os }}-
+
+      - name: Checkout Chromium
+        if: inputs.checkout-chromium && steps.cache-chromium.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          # Create gclient config
+          cat > .gclient <<EOF
+          solutions = [
+            {
+              "name": "src",
+              "url": "https://chromium.googlesource.com/chromium/src.git@${{ steps.chromium-version.outputs.version }}",
+              "managed": False,
+              "custom_deps": {},
+              "custom_vars": {},
+            },
+          ]
+          EOF
+          
+          # Sync Chromium
+          echo "Fetching Chromium source (this may take a while)..."
+          gclient sync --nohooks --no-history
+          
+          # Move to expected location
+          mv src chromium
+
+      - name: Update Chromium
+        if: inputs.checkout-chromium && steps.cache-chromium.outputs.cache-hit == 'true'
+        shell: bash
+        working-directory: chromium
+        run: |
+          # Update to correct version
+          git fetch origin ${{ steps.chromium-version.outputs.version }}
+          git checkout ${{ steps.chromium-version.outputs.version }}
+          
+          # Sync dependencies
+          gclient sync --nohooks
+
+      - name: Verify setup
+        shell: bash
+        run: |
+          echo "=== Environment Setup Complete ==="
+          echo "Python version: $(python --version)"
+          echo "depot_tools path: ${{ github.workspace }}/depot_tools"
+          
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            echo "Visual Studio: Installed"
+            where gn.bat || echo "WARNING: gn.bat not found in PATH"
+            where autoninja.bat || echo "WARNING: autoninja.bat not found in PATH"
+          else
+            echo "Xcode version: $(xcodebuild -version | head -1)"
+            which gn || echo "WARNING: gn not found in PATH"
+            which autoninja || echo "WARNING: autoninja not found in PATH"
+          fi
+          
+          if [[ "${{ inputs.checkout-chromium }}" == "true" ]]; then
+            echo "Chromium source: ${{ github.workspace }}/chromium"
+            if [[ -d "${{ github.workspace }}/chromium" ]]; then
+              echo "Chromium checkout: SUCCESS"
+            else
+              echo "Chromium checkout: FAILED"
+              exit 1
+            fi
+          fi
+
+      - name: Create environment summary
+        shell: bash
+        run: |
+          cat > ${{ github.workspace }}/build-env.txt <<EOF
+          BrowserOS Development Environment
+          =================================
+          Platform: ${{ runner.os }}
+          Python: ${{ inputs.python-version }}
+          depot_tools: ${{ github.workspace }}/depot_tools
+          BrowserOS: ${{ github.workspace }}/browseros
+          Chromium: ${{ inputs.checkout-chromium && format('{0}/chromium', github.workspace) || 'Not checked out' }}
+          Chromium Version: ${{ steps.chromium-version.outputs.version }}
+          
+          Build Commands:
+          ---------------
+          Debug build:
+            cd ${{ github.workspace }}/browseros
+            python build/build.py --config build/config/debug.yaml --chromium-src ${{ github.workspace }}/chromium
+          
+          Release build:
+            cd ${{ github.workspace }}/browseros
+            python build/build.py --config build/config/release.yaml --chromium-src ${{ github.workspace }}/chromium
+          EOF
+          
+          echo "=== Build Environment Summary ==="
+          cat ${{ github.workspace }}/build-env.txt
+
+      - name: Upload environment summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-environment-${{ runner.os }}
+          path: build-env.txt
+          retention-days: 7

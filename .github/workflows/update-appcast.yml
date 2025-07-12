@@ -1,0 +1,168 @@
+name: Update Appcast
+
+on:
+  release:
+    types: [published]  # Triggers when a release is published (not draft)
+
+jobs:
+  update-appcast:
+    name: Update Auto-Update Manifest
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          
+      - name: Install dependencies
+        run: |
+          pip install requests pyyaml lxml
+          
+      - name: Download release assets
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Get release info
+          RELEASE_TAG="${{ github.event.release.tag_name }}"
+          RELEASE_ID="${{ github.event.release.id }}"
+          
+          # Download release assets info
+          curl -s -H "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID/assets" \
+            > assets.json
+            
+          # Extract DMG info
+          DMG_URL=$(jq -r '.[] | select(.name | endswith(".dmg")) | .browser_download_url' assets.json)
+          DMG_SIZE=$(jq -r '.[] | select(.name | endswith(".dmg")) | .size' assets.json)
+          DMG_NAME=$(jq -r '.[] | select(.name | endswith(".dmg")) | .name' assets.json)
+          
+          echo "DMG_URL=$DMG_URL" >> $GITHUB_ENV
+          echo "DMG_SIZE=$DMG_SIZE" >> $GITHUB_ENV
+          echo "DMG_NAME=$DMG_NAME" >> $GITHUB_ENV
+          echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_ENV
+          
+      - name: Generate appcast.xml
+        run: |
+          python - << 'EOF'
+          import os
+          import xml.etree.ElementTree as ET
+          from datetime import datetime
+          import hashlib
+          import requests
+          
+          # Get environment variables
+          dmg_url = os.environ.get('DMG_URL', '')
+          dmg_size = os.environ.get('DMG_SIZE', '0')
+          dmg_name = os.environ.get('DMG_NAME', '')
+          release_tag = os.environ.get('RELEASE_TAG', '')
+          release_notes = """${{ github.event.release.body }}"""
+          
+          # Read existing appcast.xml if it exists
+          appcast_file = 'appcast.xml'
+          if os.path.exists(appcast_file):
+              tree = ET.parse(appcast_file)
+              root = tree.getroot()
+              channel = root.find('.//channel')
+          else:
+              # Create new appcast
+              root = ET.Element('rss', {
+                  'version': '2.0',
+                  'xmlns:sparkle': 'http://www.andymatuschak.org/xml-namespaces/sparkle',
+                  'xmlns:dc': 'http://purl.org/dc/elements/1.1/'
+              })
+              channel = ET.SubElement(root, 'channel')
+              ET.SubElement(channel, 'title').text = 'BrowserOS Updates'
+              ET.SubElement(channel, 'link').text = f'https://github.com/${{ github.repository }}'
+              ET.SubElement(channel, 'description').text = 'Most recent updates for BrowserOS'
+              ET.SubElement(channel, 'language').text = 'en'
+          
+          # Create new item
+          item = ET.Element('item')
+          ET.SubElement(item, 'title').text = f'Version {release_tag}'
+          ET.SubElement(item, 'description').text = release_notes[:500] + '...' if len(release_notes) > 500 else release_notes
+          ET.SubElement(item, 'pubDate').text = datetime.utcnow().strftime('%a, %d %b %Y %H:%M:%S +0000')
+          
+          # Add enclosure with download info
+          enclosure = ET.SubElement(item, 'enclosure', {
+              'url': dmg_url,
+              'sparkle:version': release_tag.lstrip('v'),
+              'type': 'application/octet-stream',
+              'length': dmg_size
+          })
+          
+          # Add to channel (insert at beginning)
+          channel.insert(0, item)
+          
+          # Limit to last 10 releases
+          items = channel.findall('item')
+          if len(items) > 10:
+              for item in items[10:]:
+                  channel.remove(item)
+          
+          # Write formatted XML
+          tree = ET.ElementTree(root)
+          ET.indent(tree, space='  ')
+          tree.write(appcast_file, encoding='utf-8', xml_declaration=True)
+          
+          print(f"Updated appcast.xml with release {release_tag}")
+          EOF
+          
+      - name: Update Windows manifest
+        run: |
+          python - << 'EOF'
+          import json
+          import os
+          
+          # Get environment variables
+          msi_url = os.environ.get('MSI_URL', '')
+          release_tag = os.environ.get('RELEASE_TAG', '')
+          
+          # Create/update Windows update manifest
+          manifest = {
+              "version": release_tag.lstrip('v'),
+              "url": msi_url,
+              "changelog": f"https://github.com/${{ github.repository }}/releases/tag/{release_tag}",
+              "mandatory": False,
+              "pub_date": datetime.utcnow().isoformat() + "Z"
+          }
+          
+          with open('windows-updates.json', 'w') as f:
+              json.dump(manifest, f, indent=2)
+              
+          print(f"Updated windows-updates.json with release {release_tag}")
+          EOF
+          
+      - name: Commit and push updates
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          
+          git add appcast.xml windows-updates.json || true
+          git commit -m "Update auto-update manifests for ${{ github.event.release.tag_name }}" || exit 0
+          
+          git push origin main
+          
+      - name: Upload to update server (optional)
+        if: env.SPARKLE_UPDATE_URL != ''
+        env:
+          SPARKLE_UPDATE_URL: ${{ secrets.SPARKLE_UPDATE_URL }}
+          UPDATE_SERVER_SSH_KEY: ${{ secrets.UPDATE_SERVER_SSH_KEY }}
+        run: |
+          # This is an example - adjust based on your update server setup
+          echo "$UPDATE_SERVER_SSH_KEY" > ssh_key
+          chmod 600 ssh_key
+          
+          # Upload appcast.xml to update server
+          scp -i ssh_key -o StrictHostKeyChecking=no \
+            appcast.xml windows-updates.json \
+            deploy@your-update-server.com:/var/www/updates/
+            
+          rm ssh_key

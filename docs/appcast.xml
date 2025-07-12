@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle"
+  xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <channel>
+    <title>Nxtscape Browser</title>
+    <link>https://nxtscape.github.io/nxtscape/appcast.xml</link>
+    <description>Most recent changes with links to updates.</description>
+    <language>en</language>
+
+    <!-- Updates -->
+    <item>
+      <title>Nxtscape - 0.12.0</title>
+      <description sparkle:format="plain-text">
+      </description>
+      <sparkle:version>7183.69</sparkle:version>
+      <sparkle:shortVersionString>0.12.0</sparkle:shortVersionString>
+      <pubDate>Fri, 11 Jul 2025 16:49:23 -0700</pubDate>
+      <link>https://nxtscape.ai</link>
+      <enclosure
+        url="http://cdn.browseros.com/dmg/BrowserOS_v0.12.1_arm64.dmg"
+        sparkle:edSignature="ylPrjpTj2JPFGdfqh3/DUSzTJxdlskrlORbZOqlsQsC04Euc1ovyzohTOBjyXKNDAekNa348ejKwQO/y7kKNBA==" 
+        length="126839083"
+        type="application/octet-stream" />
+      <sparkle:minimumSystemVersion>10.15</sparkle:minimumSystemVersion>
+    </item>
+    <item>
+      <title>Nxtscape - 0.11.0</title>
+      <description sparkle:format="plain-text">
+      </description>
+      <sparkle:version>7180.69</sparkle:version>
+      <sparkle:shortVersionString>0.11.0</sparkle:shortVersionString>
+      <pubDate>Wed, 09 Jul 2025 13:39:48 -0700</pubDate>
+      <link>https://nxtscape.ai</link>
+      <enclosure
+        url="http://cdn.browseros.com/dmg/BrowserOS_v0.11.1_arm64.dmg"
+        sparkle:edSignature="g4PJb3tqiSx9NcB4rwg5byFWQl48TI30jYPDF47s1lt0qCWEhewSLOWktVnDNR8Wkk07dtf61conedSxkVZ6BA==" 
+        length="126847980"
+        type="application/octet-stream" />
+      <sparkle:minimumSystemVersion>10.15</sparkle:minimumSystemVersion>
+    </item>
+    <item>
+      <title>Nxtscape - 0.10.0</title>
+      <description sparkle:format="plain-text">
+- BrowserOS now supports Windows. Check our GitHub page for the Windows installer.
+- Added a new easy way to report bugs and request features from the browser.
+      </description>
+      <sparkle:version>7178.69</sparkle:version>
+      <sparkle:shortVersionString>0.10.0</sparkle:shortVersionString>
+      <pubDate>Sun, 07 Jul 2025 00:00:00 -0700</pubDate>
+      <link>https://nxtscape.ai</link>
+      <enclosure
+        url="http://cdn.browseros.com/dmg/BrowserOS_v0.10.0_arm64.dmg"
+        sparkle:edSignature="XMJ3Vy9/XiVf38yGS5ZxHZsKrexPTtuEHr0IzA/aKRL0sMd0MhwOAt3TD4iuQDwOuyWuLbj5Uaspq1eCXliuBA==" 
+        length="126798649"
+        type="application/octet-stream" />
+      <sparkle:minimumSystemVersion>10.15</sparkle:minimumSystemVersion>
+    </item>
+    <item>
+      <title>Nxtscape - 0.9.1</title>
+      <description sparkle:format="plain-text">
+      </description>
+      <sparkle:version>7177.69</sparkle:version>
+      <sparkle:shortVersionString>0.9.1</sparkle:shortVersionString>
+      <pubDate>Sat, 05 Jul 2025 09:17:24 -0700</pubDate>
+      <link>https://nxtscape.ai</link>
+      <enclosure
+        url="http://cdn.browseros.com/dmg/BrowserOS_v0.9.1_arm64.dmg"
+        sparkle:edSignature="ZGaPXiLs0FI9aff7TKs2yoWyg1d+6nn+/EaHeJfLDIbe6URsRvWyNy2YmMmap1cexFyMAwYipkTbnW6G8np0Dw==" 
+        length="126804048"
+        type="application/octet-stream" />
+      <sparkle:minimumSystemVersion>10.15</sparkle:minimumSystemVersion>
+    </item>
+    <item>
+      <title>Nxtscape - 0.9.0</title>
+      <description sparkle:format="plain-text">
+- Minor stability improvements.
+      </description>
+      <sparkle:version>7175.69</sparkle:version>
+      <sparkle:shortVersionString>0.9.0</sparkle:shortVersionString>
+      <pubDate>Thu, 03 Jul 2025 10:29:43 -0700</pubDate>
+      <link>https://nxtscape.ai</link>
+      <enclosure
+        url="http://cdn.browseros.com/dmg/BrowserOS_v0.9.0_arm64.dmg"
+        sparkle:edSignature="cGQ8f+VOOC4ZWsl02D2Wp5uaezoepaVC4Mo0a7tXxuB/Avb04d1nLQl6U7FNW4Q4EgPP3dni7TwXg61MSHX3Cg==" 
+        length="126796495"
+        type="application/octet-stream" />
+      <sparkle:minimumSystemVersion>10.15</sparkle:minimumSystemVersion>
+    </item>
+    <item>
+      <title>Nxtscape - 0.8.0</title>
+      <description sparkle:format="plain-text">
+- NEW FEATURE: Sidekick LLM. Brings third party LLMs to side panel.
+  - Quickly toggle between ChatGPT, Claude, Gemini, Perplexity, and Ollama
+  - Supports easy copy of web page content to paste in LLM
+      </description>
+      <sparkle:version>7174.69</sparkle:version>
+      <sparkle:shortVersionString>0.8.0</sparkle:shortVersionString>
+      <pubDate>Wed, 02 Jul 2025 14:20:34 -0700</pubDate>
+      <link>https://nxtscape.ai</link>
+      <enclosure
+        url="http://cdn.browseros.com/dmg/BrowserOS_v0.8.0_arm64.dmg"
+        sparkle:edSignature="jKMoMY44vqIXWmv06m/3NjEGEI4SwZTTRJ1bVoVSS8zjNNfAme8CpA/SsA8aBk1RyF3lhzHL0V5Fh4QmI5IYBw=="
+        length="126966295"
+        type="application/octet-stream" />
+      <sparkle:minimumSystemVersion>10.15</sparkle:minimumSystemVersion>
+    </item>
+    <item>
+      <title>Nxtscape - 0.7.0</title>
+      <description sparkle:format="plain-text">
+- Improved agent to allow interruptions
+- Agent now supports pausing and resuming tasks
+      </description>
+      <sparkle:version>7170.69</sparkle:version>
+      <sparkle:shortVersionString>0.7.0</sparkle:shortVersionString>
+      <pubDate>Mon, 30 Jun 2025 17:50:17 -0700</pubDate>
+      <link>https://nxtscape.ai</link>
+      <enclosure
+        url="https://storage.googleapis.com/nxtscape/nxtscape-v0.7.0-universal-new.dmg"
+        sparkle:edSignature="uxb3EtLfK8YD1vsGo72bRXQ21MZVZcLNxLcwGNxXGbxWqFcTtk70VWa2RdGG+pZTbEwGUKJIwl3U5uvQYvDQBQ==" 
+        length="232749371"
+        type="application/octet-stream" />
+      <sparkle:minimumSystemVersion>10.15</sparkle:minimumSystemVersion>
+    </item>
+    <item>
+      <title>Nxtscape - 0.6.0</title>
+      <description sparkle:format="plain-text">
+- Support for MacOS x86_64 with Universal binary.
+- Minor fixes to updater
+- Improvements to agent; it supports interruptions.
+      </description>
+      <sparkle:version>7167.69</sparkle:version>
+      <sparkle:shortVersionString>0.6.0</sparkle:shortVersionString>
+      <pubDate>Sat, 28 Jun 2025 10:13:17 -0700</pubDate>
+      <link>https://nxtscape.ai</link>
+      <enclosure
+        url="https://storage.googleapis.com/nxtscape/nxtscape-v0.6.0-universal.dmg"
+        sparkle:edSignature="qB+KDJ0UQdQkhxX0QB89Yjo8oQIXIcdz8O6QRFJvNfLqDiZf8T7s2iiebt5LkZvvaN/Vp4c+5F3iBHokkTU2BQ=="
+        length="234987508"
+        type="application/octet-stream" />
+      <sparkle:minimumSystemVersion>10.15</sparkle:minimumSystemVersion>
+    </item>
+    <item>
+      <title>Nxtscape - 0.5.0</title>
+      <description sparkle:format="plain-text">
+- Improved Ollama support
+- Fixed issues with the unified agent
+      </description>
+      <sparkle:version>7158.88</sparkle:version>
+      <sparkle:shortVersionString>0.5.0</sparkle:shortVersionString>
+      <pubDate>Thu, 26 Jun 2025 17:42:44 -0700</pubDate>
+      <link>https://nxtscape.ai</link>
+      <enclosure
+        url="https://storage.googleapis.com/nxtscape/nxtscape-v0.5.0-arm64.dmg"
+        sparkle:edSignature="m3ALnVjkN5FE59Kh9VoXFBc8Dhz6GWgybAh6rKvv7b38EaEnFw8JI0hnC2pmB7e8QIJwFsPJCfE2OKOJf+OxAw==" 
+        length="126848776"
+        type="application/octet-stream" />
+      <sparkle:minimumSystemVersion>10.15</sparkle:minimumSystemVersion>
+    </item>
+    <item>
+      <title>Nxtscape - 0.4.0</title>
+      <description sparkle:format="plain-text">
+- [Fix] OTA updates were not working correctly for some users; fixing it.
+      </description>
+      <sparkle:version>7157.87</sparkle:version>
+      <sparkle:shortVersionString>0.4.0</sparkle:shortVersionString>
+      <pubDate>Thu, 26 Jun 2025 17:42:44 -0700</pubDate>
+      <link>https://nxtscape.ai</link>
+      <enclosure
+        url="https://storage.googleapis.com/nxtscape/nxtscape-v0.4.0-arm64.dmg"
+        sparkle:edSignature="1TRv5Is7eKvqexbZ+h4Sa7ksPH4Sam2Eau8krwsK+w3AzhAQbRTY8Megfww2PsLxKhWzi3dBcEKK3yu8by0/CQ==" 
+        length="126851560"
+        type="application/octet-stream" />
+      <sparkle:minimumSystemVersion>10.15</sparkle:minimumSystemVersion>
+    </item>
+    <item>
+      <title>Nxtscape - 0.3.0</title>
+      <description sparkle:format="plain-text">
+– Much improved AI agent for browser navigation tasks
+- Merged Productivity Agent and Browser Agent into a single AI agent
+      </description>
+      <sparkle:version>7155.85</sparkle:version>
+      <sparkle:shortVersionString>0.3.0</sparkle:shortVersionString>
+      <pubDate>Thu, 26 Jun 2025 07:34:24 -0700</pubDate>
+      <link>https://nxtscape.ai</link>
+      <enclosure
+        url="https://storage.googleapis.com/nxtscape/nxtscape-v0.3.0-arm64.dmg"
+        sparkle:edSignature="axUY3tBN7txWh1PMCrrtHdYiIBFQlABBbD/iHyM29m9N9FWRu99vNJjyGPLP00mfctR+XzZIBE0E8MFGcgPYCg=="
+        length="126850187"
+        type="application/octet-stream" />
+      <sparkle:minimumSystemVersion>10.15</sparkle:minimumSystemVersion>
+    </item>
+    <item>
+      <title>Nxtscape - 0.2.0</title>
+      <description sparkle:format="plain-text">
+– Support for overriding baseUrl in OpenAI, Claude
+– Gemini support in BYOK
+– Improved tool calling in Browser Agent
+      </description>
+      <sparkle:version>7154.84</sparkle:version>
+      <sparkle:shortVersionString>0.2.0</sparkle:shortVersionString>
+      <pubDate>Wed, 25 Jun 2025 14:15:31 -0700</pubDate>
+      <link>https://nxtscape.ai</link>
+      <enclosure
+        url="https://storage.googleapis.com/nxtscape/nxtscape-v0.2.0-arm64.dmg"
+        sparkle:edSignature="mj8TqQBTbfBY5OxiQXpJa/XD82BPx9udDqFV7p8SwQRgBwCTHdYWuswBunL7uW6IrgEytBAtyHKTse+vcZG3BA=="
+        length="126848485"
+        type="application/octet-stream" />
+      <sparkle:minimumSystemVersion>10.15</sparkle:minimumSystemVersion>
+    </item>
+    <item>
+      <title>Nxtscape - 0.1.0</title>
+      <description sparkle:format="plain-text">
+– Updates to AI agent to perform better on navigation tasks
+– Improves to MacOS updater
+– Fixing history import bug
+      </description>
+      <sparkle:version>7151.139</sparkle:version>
+      <sparkle:shortVersionString>0.1.0</sparkle:shortVersionString>
+      <pubDate>Mon, 23 Jun 2025 00:00:00 +0000</pubDate>
+      <link>https://nxtscape.ai</link>
+      <enclosure
+        url="https://storage.googleapis.com/nxtscape/Nxtscape_v0.1.0.dmg"
+        sparkle:edSignature="mPxpc/8SPEEOiCmiKE4haTGUaMRnUQRJ8SK8w3sWek/5oZD0dg/DQFg/HxbhHjt2mtFUI8VD5iUi4+uIBWr4Dg=="
+        length="127005947"
+        type="application/octet-stream" />
+      <sparkle:minimumSystemVersion>10.15</sparkle:minimumSystemVersion>
+    </item>
+
+  </channel>
+</rss>

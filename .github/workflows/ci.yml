@@ -1,0 +1,214 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint-and-type-check:
+    name: Lint and Type Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pyright ruff
+
+      - name: Type check Python code
+        run: |
+          echo "Running Pyright type checker..."
+          pyright build/
+
+      - name: Lint Python code
+        run: |
+          echo "Running Ruff linter..."
+          ruff check build/ || true  # Don't fail on lint errors for now
+
+      - name: Check Python formatting
+        run: |
+          echo "Checking Python formatting..."
+          ruff format --check build/ || true  # Don't fail on format errors for now
+
+  validate-patches:
+    name: Validate Patches
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate patch files
+        shell: bash
+        run: |
+          echo "=== Validating BrowserOS patches ==="
+          
+          # Check that all patches listed in series exist
+          if [[ -f patches/series ]]; then
+            while IFS= read -r patch || [[ -n "$patch" ]]; do
+              # Skip empty lines and comments
+              [[ -z "$patch" || "$patch" =~ ^[[:space:]]*# ]] && continue
+              
+              patch_file="patches/nxtscape/$patch"
+              if [[ ! -f "$patch_file" ]]; then
+                echo "❌ ERROR: Patch file not found: $patch_file"
+                exit 1
+              else
+                echo "✅ Found: $patch_file"
+              fi
+            done < patches/series
+          else
+            echo "❌ ERROR: patches/series file not found"
+            exit 1
+          fi
+          
+          # Validate patch format
+          for patch in patches/nxtscape/*.patch; do
+            if [[ -f "$patch" ]]; then
+              # Check for proper patch header
+              if ! head -1 "$patch" | grep -q "^From [0-9a-f]\{40\}"; then
+                echo "⚠️  WARNING: Non-standard patch format: $(basename "$patch")"
+              fi
+            fi
+          done
+          
+          echo "=== Patch validation complete ==="
+
+  check-build-config:
+    name: Check Build Configuration
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          pip install PyYAML
+
+      - name: Validate build configs
+        run: |
+          python -c "
+          import yaml
+          import sys
+          
+          configs = ['build/config/debug.yaml', 'build/config/release.yaml']
+          
+          for config_file in configs:
+              print(f'Checking {config_file}...')
+              try:
+                  with open(config_file, 'r') as f:
+                      config = yaml.safe_load(f)
+                  
+                  # Check required fields
+                  required = ['build_type', 'gn_flags']
+                  for field in required:
+                      if field not in config:
+                          print(f'❌ ERROR: Missing required field: {field}')
+                          sys.exit(1)
+                  
+                  print(f'✅ {config_file} is valid')
+              except Exception as e:
+                  print(f'❌ ERROR parsing {config_file}: {e}')
+                  sys.exit(1)
+          "
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check for secrets
+        run: |
+          echo "=== Scanning for potential secrets ==="
+          
+          # Basic patterns to check for
+          patterns=(
+            "password.*=.*['\"].*['\"]"
+            "api[_-]?key.*=.*['\"].*['\"]"
+            "secret.*=.*['\"].*['\"]"
+            "token.*=.*['\"].*['\"]"
+            "private[_-]?key"
+          )
+          
+          found_issues=0
+          
+          for pattern in "${patterns[@]}"; do
+            echo "Checking for pattern: $pattern"
+            if grep -r -i -E "$pattern" --include="*.py" --include="*.js" --include="*.json" --exclude-dir=".git" . 2>/dev/null; then
+              echo "⚠️  WARNING: Found potential sensitive data matching pattern: $pattern"
+              ((found_issues++))
+            fi
+          done
+          
+          if [[ $found_issues -gt 0 ]]; then
+            echo "⚠️  Found $found_issues potential security issues. Please review."
+          else
+            echo "✅ No obvious secrets found"
+          fi
+
+  extension-validation:
+    name: Validate Chrome Extensions
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate extension manifests
+        run: |
+          echo "=== Validating Chrome extension manifests ==="
+          
+          # Find all manifest.json files
+          for manifest in $(find resources/files -name "manifest.json"); do
+            echo "Checking $manifest..."
+            
+            # Basic JSON validation
+            if python -m json.tool "$manifest" > /dev/null 2>&1; then
+              echo "✅ Valid JSON: $manifest"
+              
+              # Check for required manifest fields
+              python -c "
+          import json
+          with open('$manifest', 'r') as f:
+              data = json.load(f)
+          
+          required = ['manifest_version', 'name', 'version']
+          for field in required:
+              if field not in data:
+                  print(f'❌ ERROR: Missing required field: {field}')
+                  exit(1)
+          
+          print(f'✅ All required fields present')
+              "
+            else
+              echo "❌ ERROR: Invalid JSON in $manifest"
+              exit 1
+            fi
+          done
+
+  quick-setup-test:
+    name: Test Quick Setup
+    uses: ./.github/workflows/copilot-setup-steps.yml
+    with:
+      platform: 'auto'
+      checkout-chromium: false

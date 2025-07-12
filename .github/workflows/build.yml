@@ -1,0 +1,241 @@
+name: Build BrowserOS
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      build-type:
+        description: 'Build type'
+        required: true
+        default: 'debug'
+        type: choice
+        options:
+          - debug
+          - release
+      platform:
+        description: 'Target platform'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - macos
+          - windows
+
+jobs:
+  setup:
+    name: Setup Environment
+    uses: ./.github/workflows/copilot-setup-steps.yml
+    with:
+      platform: ${{ github.event.inputs.platform || 'auto' }}
+      python-version: '3.12'
+      checkout-chromium: true
+      chromium-cache-key: 'chromium-build'
+
+  build:
+    name: Build BrowserOS
+    needs: setup
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ${{ (github.event.inputs.platform == 'macos' && fromJSON('["macos-latest"]')) || (github.event.inputs.platform == 'windows' && fromJSON('["windows-latest"]')) || fromJSON('["macos-latest", "windows-latest"]') }}
+        build-type: ${{ github.event.inputs.build-type && fromJSON(format('["{0}"]', github.event.inputs.build-type)) || fromJSON('["debug"]') }}
+
+    steps:
+      - name: Checkout BrowserOS
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - name: Setup build environment
+        shell: bash
+        run: |
+          # Add depot_tools to PATH
+          echo "${{ needs.setup.outputs.depot-tools-path }}" >> $GITHUB_PATH
+          
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            echo "DEPOT_TOOLS_WIN_TOOLCHAIN=0" >> $GITHUB_ENV
+          fi
+
+      - name: Restore Chromium cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ needs.setup.outputs.chromium-src-path }}
+          key: chromium-build-${{ runner.os }}-${{ hashFiles('CHROMIUM_VERSION') }}
+          restore-keys: |
+            chromium-build-${{ runner.os }}-
+
+      - name: Cache build artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            out/
+            ${{ needs.setup.outputs.chromium-src-path }}/out/
+          key: build-artifacts-${{ runner.os }}-${{ matrix.build-type }}-${{ hashFiles('CHROMIUM_VERSION', 'patches/**/*.patch', 'build/config/*.yaml') }}
+          restore-keys: |
+            build-artifacts-${{ runner.os }}-${{ matrix.build-type }}-
+            build-artifacts-${{ runner.os }}-
+
+      - name: Cache ccache
+        if: runner.os == 'Linux' || runner.os == 'macOS'
+        uses: actions/cache@v4
+        with:
+          path: ~/.ccache
+          key: ccache-${{ runner.os }}-${{ matrix.build-type }}-${{ github.sha }}
+          restore-keys: |
+            ccache-${{ runner.os }}-${{ matrix.build-type }}-
+            ccache-${{ runner.os }}-
+
+      - name: Cache sccache (Windows)
+        if: runner.os == 'Windows'
+        uses: actions/cache@v4
+        with:
+          path: ~/AppData/Local/sccache
+          key: sccache-${{ runner.os }}-${{ matrix.build-type }}-${{ github.sha }}
+          restore-keys: |
+            sccache-${{ runner.os }}-${{ matrix.build-type }}-
+            sccache-${{ runner.os }}-
+
+      - name: Setup ccache
+        if: runner.os == 'Linux' || runner.os == 'macOS'
+        shell: bash
+        run: |
+          # Install ccache if not available
+          if ! command -v ccache &> /dev/null; then
+            if [[ "${{ runner.os }}" == "macOS" ]]; then
+              brew install ccache
+            else
+              sudo apt-get update && sudo apt-get install -y ccache
+            fi
+          fi
+          
+          # Configure ccache
+          ccache --max-size=10G
+          ccache --set-config=cache_dir=$HOME/.ccache
+          ccache --set-config=compression=true
+          ccache --set-config=compression_level=6
+          
+          # Export ccache paths
+          echo "CC=ccache clang" >> $GITHUB_ENV
+          echo "CXX=ccache clang++" >> $GITHUB_ENV
+          echo "CCACHE_BASEDIR=${{ github.workspace }}" >> $GITHUB_ENV
+          echo "CCACHE_DIR=$HOME/.ccache" >> $GITHUB_ENV
+          echo "CCACHE_COMPRESS=1" >> $GITHUB_ENV
+          echo "CCACHE_COMPRESSLEVEL=6" >> $GITHUB_ENV
+          echo "CCACHE_MAXSIZE=10G" >> $GITHUB_ENV
+          
+          # Show ccache stats
+          ccache -s
+
+      - name: Setup sccache (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          # Download sccache if not in PATH
+          if (-not (Get-Command sccache -ErrorAction SilentlyContinue)) {
+            $SCCACHE_VERSION = "0.7.4"
+            $SCCACHE_URL = "https://github.com/mozilla/sccache/releases/download/v${SCCACHE_VERSION}/sccache-v${SCCACHE_VERSION}-x86_64-pc-windows-msvc.zip"
+            
+            Write-Host "Downloading sccache..."
+            Invoke-WebRequest -Uri $SCCACHE_URL -OutFile sccache.zip
+            
+            Write-Host "Extracting sccache..."
+            Expand-Archive -Path sccache.zip -DestinationPath .
+            
+            $sccachePath = ".\sccache-v${SCCACHE_VERSION}-x86_64-pc-windows-msvc"
+            echo "$sccachePath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          }
+          
+          # Configure build to use sccache
+          echo "CC=sccache cl" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "CXX=sccache cl" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          
+          # Show sccache stats
+          sccache --show-stats
+
+      - name: Apply patches
+        shell: bash
+        run: |
+          python build/build.py \
+            --config build/config/${{ matrix.build-type }}.yaml \
+            --chromium-src ${{ needs.setup.outputs.chromium-src-path }} \
+            --apply-patches
+
+      - name: Build BrowserOS
+        shell: bash
+        run: |
+          python build/build.py \
+            --config build/config/${{ matrix.build-type }}.yaml \
+            --chromium-src ${{ needs.setup.outputs.chromium-src-path }} \
+            --build
+
+      - name: Show build cache statistics
+        shell: bash
+        run: |
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            echo "=== sccache statistics ==="
+            sccache --show-stats
+          else
+            echo "=== ccache statistics ==="
+            ccache -s
+          fi
+          echo "========================="
+
+      - name: Run tests
+        shell: bash
+        run: |
+          # Run any BrowserOS-specific tests here
+          # For now, just verify the build output exists
+          if [[ "${{ runner.os }}" == "macOS" ]]; then
+            if [[ -d "out/Default/Nxtscape.app" ]]; then
+              echo "✅ macOS build successful"
+            else
+              echo "❌ macOS build failed - app not found"
+              exit 1
+            fi
+          else
+            if [[ -f "out/Default/browseros.exe" ]]; then
+              echo "✅ Windows build successful"
+            else
+              echo "❌ Windows build failed - exe not found"
+              exit 1
+            fi
+          fi
+
+      - name: Package build
+        if: matrix.build-type == 'release'
+        shell: bash
+        run: |
+          python build/build.py \
+            --config build/config/${{ matrix.build-type }}.yaml \
+            --chromium-src ${{ needs.setup.outputs.chromium-src-path }} \
+            --package
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: browseros-${{ runner.os }}-${{ matrix.build-type }}
+          path: |
+            out/Default/*.app
+            out/Default/*.exe
+            out/Default/*.dmg
+            out/Default/*.msi
+          retention-days: 7
+
+  test-quick-setup:
+    name: Test Quick Setup (No Chromium)
+    uses: ./.github/workflows/copilot-setup-steps.yml
+    with:
+      platform: 'auto'
+      checkout-chromium: false
