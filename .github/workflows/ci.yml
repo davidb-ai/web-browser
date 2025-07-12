@@ -143,24 +143,26 @@ jobs:
           
           # Basic patterns to check for
           patterns=(
-            "password.*=.*['\"].*['\"]"
-            "api[_-]?key.*=.*['\"].*['\"]"
-            "secret.*=.*['\"].*['\"]"
-            "token.*=.*['\"].*['\"]"
-            "private[_-]?key"
+            "password\s*[:=]"
+            "api_key\s*[:=]"
+            "secret\s*[:=]"
+            "token\s*[:=]"
+            "private_key\s*[:=]"
           )
           
           found_issues=0
           
           for pattern in "${patterns[@]}"; do
             echo "Checking for pattern: $pattern"
-            # Exclude minified/bundled JS files which cause false positives
+            # Search for patterns, excluding minified/bundled JS files
             if grep -r -i -E "$pattern" \
               --include="*.py" \
               --include="*.js" \
               --include="*.json" \
               --exclude-dir=".git" \
-              --exclude-dir="build" \
+              --exclude-dir="node_modules" \
+              --exclude-dir="out" \
+              --exclude="*.min.js" \
               --exclude="background.js" \
               --exclude="sidepanel.js" \
               --exclude="popup.js" \
